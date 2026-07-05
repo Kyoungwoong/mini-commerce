@@ -29,10 +29,10 @@ Modular Monolith
 
 ## Key Documents
 
-- `AGENTS.md`: Codex 작업 규칙
+- `AGENTS.md`: AI AGENT 작업 규칙
 - `docs/ROADMAP.md`: 전체 프로젝트 여정
 - `docs/CODE_REVIEW_RULES.md`: 코드 검토 기준
 - `docs/adr/`: 아키텍처 의사결정 기록
 - `tasks/CURRENT_TASK.md`: 현재 작업 범위
-- `.agents/skills/`: 반복 작업용 Codex skills
-- `.prompts/`: Codex에게 줄 작업 지시서
+- `.agents/skills/`: 반복 작업용 AI AGENT skills
+- `.prompts/`: AI AGENT에게 줄 작업 지시서
