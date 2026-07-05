@@ -3,10 +3,12 @@ package com.minicommerce.commerce.product.infrastructure
 import com.minicommerce.commerce.product.domain.Product
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 @Component
+@Profile("!test")
 class ProductDataInitializer(
     private val productRepository: ProductRepository,
 ) : ApplicationRunner {

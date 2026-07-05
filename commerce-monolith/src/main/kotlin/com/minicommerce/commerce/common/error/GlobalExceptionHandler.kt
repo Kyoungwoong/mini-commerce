@@ -3,6 +3,10 @@ package com.minicommerce.commerce.common.error
 import com.minicommerce.commerce.member.domain.DuplicateMemberEmailException
 import com.minicommerce.commerce.member.domain.MemberException
 import com.minicommerce.commerce.member.domain.MemberNotFoundException
+import com.minicommerce.commerce.order.domain.InvalidOrderQuantityException
+import com.minicommerce.commerce.order.domain.OrderException
+import com.minicommerce.commerce.order.domain.OrderNotFoundException
+import com.minicommerce.commerce.product.domain.InsufficientProductStockException
 import com.minicommerce.commerce.product.domain.ProductException
 import com.minicommerce.commerce.product.domain.ProductNotFoundException
 import com.minicommerce.common.response.ApiResponse
@@ -27,6 +31,18 @@ class GlobalExceptionHandler {
     fun handleProductNotFound(exception: ProductNotFoundException): ResponseEntity<ApiResponse<Nothing>> =
         handleProductException(exception, HttpStatus.NOT_FOUND)
 
+    @ExceptionHandler(InsufficientProductStockException::class)
+    fun handleInsufficientProductStock(exception: InsufficientProductStockException): ResponseEntity<ApiResponse<Nothing>> =
+        handleProductException(exception, HttpStatus.BAD_REQUEST)
+
+    @ExceptionHandler(OrderNotFoundException::class)
+    fun handleOrderNotFound(exception: OrderNotFoundException): ResponseEntity<ApiResponse<Nothing>> =
+        handleOrderException(exception, HttpStatus.NOT_FOUND)
+
+    @ExceptionHandler(InvalidOrderQuantityException::class)
+    fun handleInvalidOrderQuantity(exception: InvalidOrderQuantityException): ResponseEntity<ApiResponse<Nothing>> =
+        handleOrderException(exception, HttpStatus.BAD_REQUEST)
+
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleInvalidRequest(): ResponseEntity<ApiResponse<Nothing>> = ResponseEntity
         .status(HttpStatus.BAD_REQUEST)
@@ -41,6 +57,13 @@ class GlobalExceptionHandler {
 
     private fun handleProductException(
         exception: ProductException,
+        status: HttpStatus,
+    ): ResponseEntity<ApiResponse<Nothing>> = ResponseEntity
+        .status(status)
+        .body(ApiResponse.failure(exception.errorCode.code, exception.errorCode.message))
+
+    private fun handleOrderException(
+        exception: OrderException,
         status: HttpStatus,
     ): ResponseEntity<ApiResponse<Nothing>> = ResponseEntity
         .status(status)

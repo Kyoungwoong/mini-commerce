@@ -5,3 +5,5 @@ sealed class ProductException(
 ) : RuntimeException(errorCode.message)
 
 class ProductNotFoundException : ProductException(ProductErrorCode.PRODUCT_NOT_FOUND)
+
+class InsufficientProductStockException : ProductException(ProductErrorCode.INSUFFICIENT_PRODUCT_STOCK)

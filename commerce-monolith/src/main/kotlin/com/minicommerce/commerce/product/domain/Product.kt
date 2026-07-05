@@ -17,8 +17,7 @@ class Product(
     @Column(nullable = false)
     val price: Long,
 
-    @Column(nullable = false)
-    val stockQuantity: Int,
+    stockQuantity: Int,
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,4 +25,16 @@ class Product(
 
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()
+
+    @Column(nullable = false)
+    var stockQuantity: Int = stockQuantity
+        protected set
+
+    fun decreaseStock(quantity: Int) {
+        if (stockQuantity < quantity) {
+            throw InsufficientProductStockException()
+        }
+
+        stockQuantity -= quantity
+    }
 }
