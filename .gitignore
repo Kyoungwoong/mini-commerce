@@ -41,3 +41,6 @@ out/
 
 ### prompts ###
 .prompts/logs
+
+### .DS_Store ###
+.DS_Store
