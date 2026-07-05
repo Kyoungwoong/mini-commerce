@@ -2,13 +2,13 @@
 
 ## Phase
 
-Phase 2-1 - Mini Commerce Domain in Monolith: Member
+Phase 2-2 - Mini Commerce Domain in Monolith: Product
 
 ## Goal
 
-Add the first domain feature to the modular monolith.
+Add the Product domain to the current modular monolith.
 
-The goal of this task is to implement a simple Member domain inside `commerce-monolith` while keeping the project as a monolith.
+The goal of this task is to implement simple product management inside `commerce-monolith`.
 
 This is not a microservice extraction task.
 
@@ -21,11 +21,23 @@ common
 commerce-monolith
 ```
 
-`common` provides shared response classes such as `ApiResponse` and `ErrorResponse`.
+`commerce-monolith` is still the only executable Spring Boot application.
 
-`commerce-monolith` is the only executable Spring Boot application.
+The Member domain has already been added inside the monolith.
 
-In this phase, we start adding business domains inside the monolith so that we can later experience why service separation becomes useful.
+In this task, we add the Product domain inside the same monolith so that a later Order domain can use products for order creation.
+
+Current architecture is still:
+
+```text
+Client
+  ↓
+commerce-monolith
+  ↓
+common
+```
+
+It is not MSA yet.
 
 ## Scope
 
@@ -33,29 +45,33 @@ AI AGENT may change:
 
 * `commerce-monolith/**`
 * `common/**` only if the existing common response or error model needs a small compatible improvement
-* `build.gradle.kts` files only if required for JPA/H2/test dependencies
+* `build.gradle.kts` files only if required for tests or existing dependency alignment
 * `docs/**` only if a short note is needed
 
 AI AGENT should not change:
 
-* `docs/ROADMAP.md` unless the current task requires a roadmap correction
-* existing ADR files unless the task requires a new architecture decision
-* unrelated modules or future service directories
+* existing Member domain behavior unless required to fix a build issue
+* future service directories
+* Gateway-related files
+* Kafka-related files
+* Redis-related files
+* Eureka-related files
+* gRPC-related files
 
 ## Requirements
 
-Implement a simple Member domain inside `commerce-monolith`.
+Implement a simple Product domain inside `commerce-monolith`.
 
 Required package direction:
 
 ```text
-com.minicommerce.commerce.member
+com.minicommerce.commerce.product
 ```
 
 Recommended structure:
 
 ```text
-member
+product
  ├── controller
  ├── dto
  ├── application
@@ -66,19 +82,20 @@ member
 Implement the following APIs:
 
 ```http
-POST /api/v1/members
-GET /api/v1/members/{memberId}
-POST /api/v1/members/login
+POST /api/v1/products
+GET /api/v1/products
+GET /api/v1/products/{productId}
 ```
 
-### 1. Member signup
+### 1. Product registration
 
 Request example:
 
 ```json
 {
-  "email": "hiro@example.com",
-  "name": "hiro"
+  "name": "Keyboard",
+  "price": 30000,
+  "stockQuantity": 100
 }
 ```
 
@@ -88,19 +105,44 @@ Response example:
 {
   "success": true,
   "data": {
-    "memberId": 1,
-    "email": "hiro@example.com",
-    "name": "hiro"
+    "productId": 1,
+    "name": "Keyboard",
+    "price": 30000,
+    "stockQuantity": 100
   }
 }
 ```
 
-### 2. Member lookup
+### 2. Product list
 
 Request:
 
 ```http
-GET /api/v1/members/{memberId}
+GET /api/v1/products
+```
+
+Response example:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "productId": 1,
+      "name": "Keyboard",
+      "price": 30000,
+      "stockQuantity": 100
+    }
+  ]
+}
+```
+
+### 3. Product detail
+
+Request:
+
+```http
+GET /api/v1/products/{productId}
 ```
 
 Response example:
@@ -109,78 +151,49 @@ Response example:
 {
   "success": true,
   "data": {
-    "memberId": 1,
-    "email": "hiro@example.com",
-    "name": "hiro"
+    "productId": 1,
+    "name": "Keyboard",
+    "price": 30000,
+    "stockQuantity": 100
   }
 }
 ```
-
-### 3. Mock login
-
-This is not real authentication.
-
-Request example:
-
-```json
-{
-  "email": "hiro@example.com"
-}
-```
-
-Response example:
-
-```json
-{
-  "success": true,
-  "data": {
-    "memberId": 1,
-    "mockAccessToken": "mock-token-1"
-  }
-}
-```
-
-The mock login endpoint should only exist to support later order flows.
-
-Do not implement JWT in this task.
 
 ## Persistence
 
-Use H2 and Spring Data JPA for this monolith phase if they are not already configured.
+Use the existing H2 and Spring Data JPA setup.
 
-Create a simple `Member` entity.
+Create a simple `Product` entity.
 
 Suggested fields:
 
 ```text
 id
-email
 name
+price
+stockQuantity
 createdAt
 ```
 
-Email should be unique.
+Validation rules:
 
-If duplicate email is requested, return a clear error response.
+* name must not be blank
+* price must be greater than 0
+* stockQuantity must be 0 or greater
+
+Do not implement stock decrease/reservation yet.
+
+Stock decrease will be handled later when the Order domain is introduced.
 
 ## Common Response
 
 Use the existing common response wrapper.
 
-If the current common response structure is insufficient, improve it minimally.
+Do not create a separate product-only response format.
+
+If the current common response or error model is insufficient, improve it minimally and compatibly.
 
 Do not over-engineer the common module.
-
-## Validation
-
-Add simple validation where appropriate.
-
-Examples:
-
-* email must not be blank
-* name must not be blank
-
-Use Jakarta Bean Validation if it fits the current project setup.
 
 ## Error Handling
 
@@ -188,13 +201,12 @@ Add simple error handling for this task.
 
 At minimum:
 
-* member not found
-* duplicate email
-* invalid request
+* product not found
+* invalid product request
 
-If a global exception handler does not exist yet, add a simple one inside `commerce-monolith`.
+If a global exception handler already exists from the Member task, reuse or extend it.
 
-Keep it minimal.
+Do not create duplicate exception handling structures if a common pattern already exists.
 
 ## Tests
 
@@ -202,17 +214,22 @@ Add relevant tests.
 
 Required minimum:
 
-* member signup succeeds
-* member lookup succeeds
-* duplicate email returns an error
-* mock login succeeds for an existing member
+* product registration succeeds
+* product list returns registered products
+* product detail lookup succeeds
+* product not found returns an error
+* invalid product request returns an error
 
 Choose simple tests that fit the current project setup.
 
 ## Do Not
 
 * Do not create separate microservice modules yet.
-* Do not extract `member-service`.
+* Do not extract `product-service`.
+* Do not add Order domain yet.
+* Do not add Payment domain yet.
+* Do not add Notification domain yet.
+* Do not implement stock decrease or stock reservation yet.
 * Do not add Kafka.
 * Do not add Redis.
 * Do not add Redis Sentinel.
@@ -220,7 +237,7 @@ Choose simple tests that fit the current project setup.
 * Do not add API Gateway.
 * Do not add Load Balancer.
 * Do not add JWT.
-* Do not add Spring Security unless absolutely required, and if added, explain why.
+* Do not add Spring Security.
 * Do not add CQRS.
 * Do not add Event Sourcing.
 * Do not add gRPC.
@@ -228,9 +245,9 @@ Choose simple tests that fit the current project setup.
 
 ## Done When
 
-* Member signup API works.
-* Member lookup API works.
-* Mock login API works.
+* Product registration API works.
+* Product list API works.
+* Product detail API works.
 * Common response format is used.
 * Relevant tests pass.
 * The project builds successfully.
