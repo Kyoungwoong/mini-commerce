@@ -1,3 +1,8 @@
+---
+name: add-rest-api
+description: Use when adding or modifying a REST API endpoint, including controller, DTO, service logic, tests, and API documentation.
+---
+
 # Skill: Add REST API
 
 Use this skill when adding a REST API endpoint.

@@ -1,3 +1,8 @@
+---
+name: create-kotlin-spring-module
+description: Use when creating a new Kotlin Spring Boot module or Gradle Kotlin DSL module in this MSA learning project.
+---
+
 # Skill: Create Kotlin Spring Module
 
 Use this skill when creating a new Kotlin Spring Boot module.

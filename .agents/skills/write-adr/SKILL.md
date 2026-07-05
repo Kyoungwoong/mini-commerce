@@ -1,3 +1,8 @@
+---
+name: write-adr
+description: Use when recording an architecture decision in docs/adr, including context, decision, consequences, and alternatives.
+---
+
 # Skill: Write ADR
 
 Use this skill when an architecture decision should be recorded.

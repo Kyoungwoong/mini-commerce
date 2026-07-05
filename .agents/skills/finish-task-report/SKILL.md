@@ -1,3 +1,8 @@
+---
+name: finish-task-report
+description: Use at the end of an implementation task to summarize changes, verification results, risks, and the next suggested task.
+---
+
 # Skill: Finish Task Report
 
 Use this skill at the end of an implementation task.

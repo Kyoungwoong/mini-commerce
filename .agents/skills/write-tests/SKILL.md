@@ -1,3 +1,8 @@
+---
+name: write-tests
+description: Use when adding or improving Kotlin, Spring Boot, domain, controller, repository, or integration tests.
+---
+
 # Skill: Write Tests
 
 Use this skill when adding or improving tests.

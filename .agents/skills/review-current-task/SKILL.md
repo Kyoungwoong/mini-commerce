@@ -1,3 +1,8 @@
+---
+name: review-current-task
+description: Use when reviewing whether the current repository changes satisfy tasks/CURRENT_TASK.md and follow the project roadmap.
+---
+
 # Skill: Review Current Task
 
 Use this skill when asked to review whether the current repository state satisfies the active task.
