@@ -16,6 +16,7 @@ Read:
 2. Identify the target module.
 3. Define request DTO.
 4. Define response DTO or use common response wrapper if already introduced.
+    1. If there's kotlin have a class like java's record, use it.
 5. Add controller.
 6. Add application/service logic.
 7. Add domain logic if needed.
