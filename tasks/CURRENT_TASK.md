@@ -2,22 +2,17 @@
 
 ## Phase
 
-Phase 2-3 - Mini Commerce Domain in Monolith: Order
+Phase 2-4 - Mini Commerce Domain in Monolith: Fake Payment
 
 ## Goal
 
-Add the Order domain to the current modular monolith.
+Add a simple Fake Payment domain to the current modular monolith.
 
-The goal of this task is to implement a simple order flow inside `commerce-monolith`.
+The goal of this task is to connect Order and Payment inside `commerce-monolith`.
 
-This task is important because Order will later become the center of many MSA problems:
+This task is important because Payment will later become the starting point for distributed transaction and Saga pattern learning.
 
-* service-to-service communication
-* distributed transaction
-* payment workflow
-* notification event
-* Saga pattern
-* CQRS / Event Sourcing
+This is not a real payment gateway integration task.
 
 This is not a microservice extraction task.
 
@@ -37,9 +32,12 @@ The following domains already exist inside the monolith:
 ```text
 member
 product
+order
 ```
 
-Now we will add the Order domain inside the same monolith.
+Order creation already validates member/product, stores order items, and decreases product stock.
+
+Now we will add a simple Fake Payment domain inside the same monolith.
 
 Current architecture is still:
 
@@ -53,9 +51,9 @@ common
 
 It is not MSA yet.
 
-In this task, Order should use existing Member and Product data inside the monolith.
+In this task, Payment should update the existing Order status inside the same monolith.
 
-Later, when services are separated, this simple in-process call will become service-to-service communication.
+Later, when Order and Payment are separated into different services, this simple in-process transaction will become a distributed transaction problem.
 
 ## Scope
 
@@ -77,18 +75,18 @@ AI AGENT should not change:
 
 ## Requirements
 
-Implement a simple Order domain inside `commerce-monolith`.
+Implement a simple Fake Payment domain inside `commerce-monolith`.
 
 Required package direction:
 
 ```text
-com.minicommerce.commerce.order
+com.minicommerce.commerce.payment
 ```
 
 Recommended structure:
 
 ```text
-order
+payment
  ├── controller
  ├── dto
  ├── application
@@ -99,219 +97,178 @@ order
 Implement the following APIs:
 
 ```http
-POST /api/v1/orders
-GET /api/v1/orders/{orderId}
-GET /api/v1/orders?memberId={memberId}
+POST /api/v1/payments
+GET /api/v1/payments/{paymentId}
 ```
 
 ## API Details
 
-### 1. Create Order
+### 1. Request Fake Payment
 
 Request example:
 
 ```json
 {
-  "memberId": 1,
-  "items": [
-    {
-      "productId": 1,
-      "quantity": 2
-    }
-  ]
+  "orderId": 1,
+  "shouldFail": false
 }
 ```
 
-Response example:
+If `shouldFail` is `false`, payment should be approved.
+
+Expected response:
 
 ```json
 {
   "success": true,
   "data": {
+    "paymentId": 1,
     "orderId": 1,
-    "memberId": 1,
-    "status": "CREATED",
-    "totalPrice": 60000,
-    "items": [
-      {
-        "productId": 1,
-        "productName": "Keyboard",
-        "orderPrice": 30000,
-        "quantity": 2
-      }
-    ]
+    "amount": 60000,
+    "status": "APPROVED",
+    "orderStatus": "PAID"
   }
 }
 ```
 
-### 2. Order Detail
+If `shouldFail` is `true`, payment should fail.
 
-Request:
-
-```http
-GET /api/v1/orders/{orderId}
-```
-
-Response example:
+Expected response:
 
 ```json
 {
   "success": true,
   "data": {
+    "paymentId": 1,
     "orderId": 1,
-    "memberId": 1,
-    "status": "CREATED",
-    "totalPrice": 60000,
-    "items": [
-      {
-        "productId": 1,
-        "productName": "Keyboard",
-        "orderPrice": 30000,
-        "quantity": 2
-      }
-    ]
+    "amount": 60000,
+    "status": "FAILED",
+    "orderStatus": "PAYMENT_FAILED"
   }
 }
 ```
 
-### 3. Member Orders
+Payment failure is a business result, not necessarily an API error.
+
+So it is acceptable to return `success: true` with payment status `FAILED`.
+
+### 2. Payment Detail
 
 Request:
 
 ```http
-GET /api/v1/orders?memberId=1
+GET /api/v1/payments/{paymentId}
 ```
 
-Response example:
+Expected response:
 
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "orderId": 1,
-      "memberId": 1,
-      "status": "CREATED",
-      "totalPrice": 60000
-    }
-  ]
+  "data": {
+    "paymentId": 1,
+    "orderId": 1,
+    "amount": 60000,
+    "status": "APPROVED"
+  }
 }
 ```
 
-## Domain Rules
+## Domain Model
 
-Create a simple `Order` aggregate.
+Create a simple `Payment` entity.
 
-Suggested entities:
+Suggested classes:
 
 ```text
-Order
-OrderItem
+Payment
+PaymentStatus
 ```
 
-Suggested fields for `Order`:
+Suggested fields for `Payment`:
 
 ```text
 id
-memberId
+orderId
+amount
 status
-totalPrice
+failureReason
 createdAt
-items
 ```
 
-Suggested fields for `OrderItem`:
+Suggested `PaymentStatus`:
 
-```text
-id
-productId
-productName
-orderPrice
-quantity
+```kotlin
+enum class PaymentStatus {
+    APPROVED,
+    FAILED
+}
 ```
 
-Important:
+## Order Status Interaction
 
-* Store `productName` and `orderPrice` inside `OrderItem`.
-* Do not only store `productId`.
+Payment should update the existing Order status.
 
-Reason:
-
-The order should preserve the product name and price at the time of ordering.
-
-If the product price changes later, the past order price should not change.
-
-## Order Status
-
-Add a simple order status enum.
-
-Initial status can be:
+Expected Order status flow:
 
 ```text
 CREATED
+  → PAID
+  → PAYMENT_FAILED
 ```
 
-You may also prepare future statuses if it does not complicate the implementation:
+If the existing `OrderStatus` enum does not have these statuses, add them:
 
-```text
-CREATED
-PAYMENT_REQUESTED
-PAID
-PAYMENT_FAILED
-CANCELLED
+```kotlin
+enum class OrderStatus {
+    CREATED,
+    PAYMENT_REQUESTED,
+    PAID,
+    PAYMENT_FAILED,
+    CANCELLED
+}
 ```
 
-Do not implement payment behavior in this task.
+Only update what is necessary.
 
-## Product Stock
+Do not implement full payment workflow or Saga yet.
 
-When an order is created:
+## Payment Rules
 
-1. Validate member exists.
-2. Validate product exists.
-3. Validate requested quantity is greater than 0.
-4. Validate product stock is enough.
-5. Decrease product stock.
-6. Create order.
+When payment is requested:
 
-This is intentionally simple.
+1. Validate order exists.
+2. Validate order is payable.
+3. Determine amount from the order total price.
+4. If `shouldFail` is `false`:
 
-Do not implement stock reservation yet.
+    * create payment with status `APPROVED`
+    * update order status to `PAID`
+5. If `shouldFail` is `true`:
 
-Do not implement concurrency control yet.
-
-Concurrency and distributed stock consistency will be discussed later.
-
-## Persistence
-
-Use the existing H2 and Spring Data JPA setup.
-
-Create JPA entities and repositories for Order and OrderItem.
+    * create payment with status `FAILED`
+    * update order status to `PAYMENT_FAILED`
 
 Keep the implementation simple.
 
-## Cross-domain Interaction
+## Transaction
 
-Order may use existing Member and Product logic inside the monolith.
-
-Prefer using application services or small reader/facade methods if they already exist.
-
-Avoid duplicating Member/Product lookup logic unnecessarily.
-
-However, do not over-engineer ports/adapters in this task.
+Use a simple Spring `@Transactional` boundary if appropriate.
 
 The learning point is:
 
 ```text
-In a monolith, Order can easily call Member/Product logic in the same process.
-Later, when services are separated, this becomes service-to-service communication.
+In a monolith, Payment can update Order in the same application and database transaction.
+Later, when Order and Payment are separated, this becomes a distributed transaction problem.
 ```
+
+Do not implement Saga in this task.
 
 ## Common Response
 
 Use the existing common response wrapper.
 
-Do not create an order-only response format.
+Do not create a payment-only response format.
 
 If the current common response or error model is insufficient, improve it minimally and compatibly.
 
@@ -321,11 +278,9 @@ Add or reuse simple error handling.
 
 Required cases:
 
-* member not found
-* product not found
 * order not found
-* invalid order quantity
-* insufficient product stock
+* payment not found
+* order is not payable
 * invalid request
 
 If a global exception handler already exists, reuse or extend it.
@@ -338,23 +293,24 @@ Add relevant tests.
 
 Required minimum:
 
-* order creation succeeds
-* order detail lookup succeeds
-* member orders lookup succeeds
-* creating order with non-existing member returns an error
-* creating order with non-existing product returns an error
-* creating order with insufficient stock returns an error
-* creating order decreases product stock
+* payment approval succeeds
+* payment approval updates order status to `PAID`
+* payment failure succeeds as a business result
+* payment failure updates order status to `PAYMENT_FAILED`
+* payment detail lookup succeeds
+* payment request for non-existing order returns an error
+* payment request for already paid order returns an error if payable validation is implemented
 
 Choose simple tests that fit the current project setup.
 
 ## Do Not
 
 * Do not create separate microservice modules yet.
-* Do not extract `order-service`.
-* Do not add Payment domain yet.
-* Do not add Notification domain yet.
-* Do not implement payment behavior.
+* Do not extract `payment-service`.
+* Do not call an external payment gateway.
+* Do not add real PG integration.
+* Do not add Toss Payments, KakaoPay, NaverPay, or any external SDK.
+* Do not add Notification domain in this task.
 * Do not send notification.
 * Do not add Kafka.
 * Do not add Redis.
@@ -368,15 +324,16 @@ Choose simple tests that fit the current project setup.
 * Do not add Event Sourcing.
 * Do not add gRPC.
 * Do not add Docker Compose unless explicitly requested.
-* Do not introduce complex concurrency control yet.
+* Do not implement Saga yet.
+* Do not implement compensation transaction yet.
 
 ## Done When
 
-* Order creation API works.
-* Order detail API works.
-* Member orders lookup API works.
-* Order stores product name and order price at the time of ordering.
-* Product stock decreases when an order is created.
+* Fake payment API works.
+* Payment detail API works.
+* Approved payment updates order status to `PAID`.
+* Failed payment updates order status to `PAYMENT_FAILED`.
+* Payment amount is based on order total price.
 * Common response format is used.
 * Relevant tests pass.
 * The project builds successfully.
