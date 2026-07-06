@@ -7,3 +7,5 @@ sealed class OrderException(
 class OrderNotFoundException : OrderException(OrderErrorCode.ORDER_NOT_FOUND)
 
 class InvalidOrderQuantityException : OrderException(OrderErrorCode.INVALID_ORDER_QUANTITY)
+
+class OrderNotPayableException : OrderException(OrderErrorCode.ORDER_NOT_PAYABLE)

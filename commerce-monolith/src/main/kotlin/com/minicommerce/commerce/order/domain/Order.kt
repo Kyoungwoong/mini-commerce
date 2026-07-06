@@ -19,9 +19,7 @@ class Order(
     @Column(nullable = false)
     val memberId: Long,
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
-    val status: OrderStatus = OrderStatus.CREATED,
+    status: OrderStatus = OrderStatus.CREATED,
 
     items: List<OrderItem>,
 ) {
@@ -35,7 +33,28 @@ class Order(
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    var status: OrderStatus = status
+        protected set
+
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     @JoinColumn(name = "order_id", nullable = false)
     val items: MutableList<OrderItem> = items.toMutableList()
+
+    fun markPaid() {
+        validatePayable()
+        status = OrderStatus.PAID
+    }
+
+    fun markPaymentFailed() {
+        validatePayable()
+        status = OrderStatus.PAYMENT_FAILED
+    }
+
+    private fun validatePayable() {
+        if (status != OrderStatus.CREATED) {
+            throw OrderNotPayableException()
+        }
+    }
 }

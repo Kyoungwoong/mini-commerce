@@ -6,6 +6,9 @@ import com.minicommerce.commerce.member.domain.MemberNotFoundException
 import com.minicommerce.commerce.order.domain.InvalidOrderQuantityException
 import com.minicommerce.commerce.order.domain.OrderException
 import com.minicommerce.commerce.order.domain.OrderNotFoundException
+import com.minicommerce.commerce.order.domain.OrderNotPayableException
+import com.minicommerce.commerce.payment.domain.PaymentException
+import com.minicommerce.commerce.payment.domain.PaymentNotFoundException
 import com.minicommerce.commerce.product.domain.InsufficientProductStockException
 import com.minicommerce.commerce.product.domain.ProductException
 import com.minicommerce.commerce.product.domain.ProductNotFoundException
@@ -43,6 +46,14 @@ class GlobalExceptionHandler {
     fun handleInvalidOrderQuantity(exception: InvalidOrderQuantityException): ResponseEntity<ApiResponse<Nothing>> =
         handleOrderException(exception, HttpStatus.BAD_REQUEST)
 
+    @ExceptionHandler(OrderNotPayableException::class)
+    fun handleOrderNotPayable(exception: OrderNotPayableException): ResponseEntity<ApiResponse<Nothing>> =
+        handleOrderException(exception, HttpStatus.BAD_REQUEST)
+
+    @ExceptionHandler(PaymentNotFoundException::class)
+    fun handlePaymentNotFound(exception: PaymentNotFoundException): ResponseEntity<ApiResponse<Nothing>> =
+        handlePaymentException(exception, HttpStatus.NOT_FOUND)
+
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleInvalidRequest(): ResponseEntity<ApiResponse<Nothing>> = ResponseEntity
         .status(HttpStatus.BAD_REQUEST)
@@ -64,6 +75,13 @@ class GlobalExceptionHandler {
 
     private fun handleOrderException(
         exception: OrderException,
+        status: HttpStatus,
+    ): ResponseEntity<ApiResponse<Nothing>> = ResponseEntity
+        .status(status)
+        .body(ApiResponse.failure(exception.errorCode.code, exception.errorCode.message))
+
+    private fun handlePaymentException(
+        exception: PaymentException,
         status: HttpStatus,
     ): ResponseEntity<ApiResponse<Nothing>> = ResponseEntity
         .status(status)
